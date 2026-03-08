@@ -7,6 +7,14 @@
 3. Use `$gsd-plan-phase` before implementation and `$gsd-execute-phase` for structured execution.
 4. Run `$gsd-verify-work` before handoff; use `$gsd-help` for command guidance.
 
+## UI UX Pro Max Protocol
+
+1. Use `$ui-ux-pro-max` before non-trivial frontend design or redesign work.
+2. Start with design-system generation, then follow with stack-specific searches for `react`.
+3. Persist approved design output into `design-system/MASTER.md` and page overrides in `design-system/pages/`.
+4. Treat the skill as design intelligence, not a license to ignore the repo's existing token system, density targets, or operational UX goals.
+5. Reject the skill's `html-tailwind` default when working on AI-Enterprise; the canonical frontend stack is React + TypeScript + authored CSS.
+
 ## Research-Backed Competency Matrix
 
 ### Core Platform
@@ -14,6 +22,12 @@
 1. FastAPI service architecture, middleware, routing, static hosting.
 2. SQLite reliability patterns (WAL, busy_timeout, migration safety).
 3. Agent orchestration data modeling (`master_agents`, `task_queue`, `error_log`).
+
+### Frontend Design Intelligence
+
+1. UI UX Pro Max search workflow for patterns, palettes, typography, UX guidelines, and anti-patterns.
+2. Design-system persistence workflow using `design-system/MASTER.md` plus page overrides.
+3. React-specific UI implementation translation from generated design-system guidance into AI-Enterprise components and CSS tokens.
 
 ### WordPress + B2B + Theme Development
 

@@ -17,6 +17,13 @@
 - Preferred full validation command: `bash scripts/validate_ai_enterprise.sh`
 - Autonomy-specific validation: `bash scripts/validate_autonomy.sh`
 
+## Frontend Design Protocol
+
+- Use `$ui-ux-pro-max` for non-trivial frontend design, design-system generation, and UI/UX anti-pattern review.
+- For AI-Enterprise, do not stop at the skill's generic `html-tailwind` default. Follow design-system generation with stack-specific guidance for `react`.
+- Persist design decisions in `design-system/MASTER.md` and `design-system/pages/<route>.md` once frontend design work starts.
+- Keep AI-Enterprise visual decisions aligned with the existing mission-control language in `src/styles/tokens.css` unless the new phase explicitly redefines it.
+
 ## Notes
 
 - The workspace-level instructions in `/Users/IAn/Agent/AGENTS.md` still apply.

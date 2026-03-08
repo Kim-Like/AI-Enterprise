@@ -30,6 +30,15 @@
 2. Block closure until acceptance criteria evidence exists.
 3. Write escalations to `error_log` with source, severity, and owner.
 
+## Frontend Design Routing
+
+1. Route non-trivial frontend design and UX redesign work through Engineer with `$ui-ux-pro-max` as the required design-intelligence step.
+2. Require a persisted design-system artifact before approving broad frontend visual changes:
+- `design-system/MASTER.md` for global rules
+- `design-system/pages/<route>.md` for route-specific overrides
+3. Enforce stack alignment: AI-Enterprise frontend design work must target React + TypeScript + authored CSS, not generic Tailwind defaults.
+4. Treat generated style suggestions as inputs to governance, not automatic truth; preserve mission-control seriousness and operational density.
+
 ## Delegation Policy vNext
 
 1. Preserve layered routing only: `Father -> Master -> Specialist`.

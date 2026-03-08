@@ -31,6 +31,12 @@
 - `rg`, `curl`, `lsof`, `git`, `jq`
 - local log files under `/tmp` when needed
 
+## UI/UX Design Tooling
+
+- Shared Codex skill: `~/.codex/skills/ui-ux-pro-max/SKILL.md`
+- Design-system search tool: `python3 ~/.codex/skills/ui-ux-pro-max/scripts/search.py`
+- Persist design outputs in repo-local `design-system/`
+
 ## Integration Surfaces
 
 - WordPress/cPanel MySQL
