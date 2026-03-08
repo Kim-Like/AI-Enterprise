@@ -101,6 +101,7 @@ Every executor run writes durable audit rows and updates topology sync state.
 - `autonomy_actions` stores per-repository action outcomes.
 - `autonomy_repo_sync` is the topology sync table for the latest governed-repo state.
 - `deployment_provenance` stores the latest provenance record tied to the autonomy run id.
+- When a governed GitHub repo is missing, the executor creates it with `GITHUB_AUTONOMY_TOKEN` before local bootstrap and records whether the provider-side repo already existed or was created during the run.
 
 Rollback-safe failure handling means bootstrap or validation failures restore the previous `origin` contract when possible and leave the repo quarantined instead of silently continuing.
 

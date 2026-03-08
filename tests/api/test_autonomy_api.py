@@ -179,6 +179,19 @@ def test_autonomy_executor_run_provision_mode_updates_provenance_and_sync(monkey
 
     real_run = autonomy_service.subprocess.run
 
+    def fake_ensure_provider_remote_exists(repo):
+        assert repo["primary_remote"]["provider"] == "github"
+        assert repo["primary_remote"]["namespace"] == "Kim-Like"
+        return {
+            "provider": "github",
+            "namespace": repo["primary_remote"]["namespace"],
+            "repo_name": repo["primary_remote"]["repo_name"],
+            "status": "created",
+            "created": True,
+            "api_path": "/user/repos",
+            "html_url": f"https://github.com/{repo['primary_remote']['namespace']}/{repo['primary_remote']['repo_name']}",
+        }
+
     def fake_run(args, *run_args, **run_kwargs):
         command = list(args)
         joined = " ".join(command)
@@ -188,6 +201,7 @@ def test_autonomy_executor_run_provision_mode_updates_provenance_and_sync(monkey
             return SimpleNamespace(returncode=0, stdout="git_governance=ok checked=1 skipped=0\n", stderr="")
         return real_run(args, *run_args, **run_kwargs)
 
+    monkeypatch.setattr(autonomy_service, "ensure_provider_remote_exists", fake_ensure_provider_remote_exists)
     monkeypatch.setattr(autonomy_service.subprocess, "run", fake_run)
 
     response = client.post(
@@ -210,6 +224,8 @@ def test_autonomy_executor_run_provision_mode_updates_provenance_and_sync(monkey
     assert repo["status"] == "completed"
     assert repo["validation_status"] == "passed"
     assert repo["provenance_id"]
+    assert repo["rollback_anchor"]["provider_repo_created"] is True
+    assert repo["detail"]["provider_result"]["status"] == "created"
 
     sync = client.get("/api/autonomy/sync/repositories", headers=_autonomy_headers())
     assert sync.status_code == 200
@@ -218,3 +234,35 @@ def test_autonomy_executor_run_provision_mode_updates_provenance_and_sync(monkey
     assert sync_row["last_validation_status"] == "passed"
     assert sync_row["last_provenance_id"] == repo["provenance_id"]
     assert sync_row["latest_provenance"]["id"] == repo["provenance_id"]
+
+
+def test_autonomy_executor_quarantines_when_provider_create_fails(monkeypatch, tmp_path: Path):
+    client = _client(monkeypatch, tmp_path)
+    _enable_live_executor_policy(client)
+
+    import api.system.autonomy_service as autonomy_service
+
+    def fake_ensure_provider_remote_exists(_repo):
+        raise RuntimeError("GitHub repository create failed for Kim-Like/AI-Enterprise: insufficient_scope")
+
+    monkeypatch.setattr(autonomy_service, "ensure_provider_remote_exists", fake_ensure_provider_remote_exists)
+
+    response = client.post(
+        "/api/autonomy/executor/run",
+        headers=_autonomy_headers(),
+        json={
+            "actor_agent_id": "engineer",
+            "repo_ids": ["ai-enterprise"],
+            "requested_mode": "provision",
+            "trigger_source": "test-suite",
+        },
+    )
+
+    assert response.status_code == 200, response.text
+    payload = response.json()
+    assert payload["run"]["status"] == "quarantined"
+    assert payload["run"]["quarantine_reason"] == "provider_create_failed"
+    repo = payload["repositories"][0]
+    assert repo["status"] == "quarantined"
+    assert repo["quarantine_reason"] == "provider_create_failed"
+    assert "insufficient_scope" in repo["detail"]["provider_error"]

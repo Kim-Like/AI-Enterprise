@@ -45,6 +45,8 @@ git rev-parse HEAD
 
 For autonomy-managed repo reconciliation, the same evidence is written to SQLite in `deployment_provenance`, and the latest topology sync row in `autonomy_repo_sync` points at the latest provenance record.
 
+For create-if-missing governed repos, provenance is recorded after the GitHub provider-side repo existence check or creation step, so the latest row can show whether the remote already existed or was created by the autonomy run.
+
 ## Rollback Rule
 
 Rollback is performed by returning a deploy boundary to a known-good commit or tag.

@@ -7,6 +7,8 @@ import os
 import shlex
 import subprocess
 import sys
+import urllib.error
+import urllib.request
 import uuid
 from dataclasses import dataclass
 from pathlib import Path
@@ -28,6 +30,7 @@ AUTONOMY_ROLLOUT_STAGE = "wave2_audited_execution"
 AUTONOMY_SERVICE_UNIT = "ai-enterprise-autonomy.service"
 AUTONOMY_TIMER_UNIT = "ai-enterprise-autonomy.timer"
 AUTONOMY_API_SERVICE_UNIT = "ai-enterprise-api.service"
+GITHUB_API_BASE = "https://api.github.com"
 
 
 @dataclass(frozen=True)
@@ -292,6 +295,118 @@ def _provider_validation_errors(repo: dict[str, Any], *, credential_present: boo
     if bool(repo["primary_remote"]["create_if_missing"]) and not credential_present:
         validation_errors.append("missing_provider_credential")
     return validation_errors
+
+
+def _safe_json_decode(raw: str | bytes | None, *, default: Any) -> Any:
+    if raw in {None, ""}:
+        return default
+    text = raw.decode("utf-8", errors="replace") if isinstance(raw, bytes) else str(raw)
+    try:
+        return json.loads(text)
+    except json.JSONDecodeError:
+        return default
+
+
+def _github_api_request(
+    *,
+    token: str,
+    method: str,
+    path: str,
+    payload: dict[str, Any] | None = None,
+) -> tuple[int, dict[str, Any]]:
+    url = f"{GITHUB_API_BASE}{path}"
+    body = None if payload is None else json.dumps(payload).encode("utf-8")
+    request = urllib.request.Request(
+        url,
+        data=body,
+        method=method,
+        headers={
+            "Accept": "application/vnd.github+json",
+            "Authorization": f"Bearer {token}",
+            "User-Agent": "AI-Enterprise-Autonomy",
+            "X-GitHub-Api-Version": "2022-11-28",
+        },
+    )
+    try:
+        with urllib.request.urlopen(request, timeout=15) as response:
+            return int(response.status), _safe_json_decode(response.read(), default={})
+    except urllib.error.HTTPError as exc:
+        return int(exc.code), _safe_json_decode(exc.read(), default={})
+    except urllib.error.URLError as exc:  # pragma: no cover - network failure formatting
+        raise RuntimeError(f"GitHub API request failed: {exc.reason}") from exc
+
+
+def ensure_provider_remote_exists(repo: dict[str, Any]) -> dict[str, Any]:
+    primary_remote = repo["primary_remote"]
+    provider = str(primary_remote["provider"]).strip().lower()
+    if provider != "github":
+        raise RuntimeError(f"Unsupported provider for autonomy create-if-missing flow: {provider}")
+
+    token_ref = str(primary_remote["credential_ref"]).strip()
+    token = str(os.getenv(token_ref) or "").strip()
+    if not token:
+        raise RuntimeError(f"Missing provider credential: {token_ref}")
+
+    namespace = str(primary_remote["namespace"]).strip()
+    repo_name = str(primary_remote["repo_name"]).strip()
+    repo_path = f"/repos/{namespace}/{repo_name}"
+
+    status_code, response_body = _github_api_request(token=token, method="GET", path=repo_path)
+    if status_code == 200:
+        return {
+            "provider": "github",
+            "namespace": namespace,
+            "repo_name": repo_name,
+            "status": "exists",
+            "created": False,
+            "api_path": repo_path,
+            "html_url": str(response_body.get("html_url") or ""),
+        }
+    if status_code != 404:
+        message = str(response_body.get("message") or "probe_failed")
+        raise RuntimeError(f"GitHub repository probe failed for {namespace}/{repo_name}: {message}")
+
+    owner_status, owner_payload = _github_api_request(token=token, method="GET", path="/user")
+    if owner_status != 200:
+        message = str(owner_payload.get("message") or "owner_probe_failed")
+        raise RuntimeError(f"GitHub owner probe failed for {namespace}: {message}")
+
+    authenticated_login = str(owner_payload.get("login") or "").strip().lower()
+    create_payload = {"name": repo_name, "private": True, "auto_init": False}
+    if authenticated_login == namespace.lower():
+        create_path = "/user/repos"
+    else:
+        create_path = f"/orgs/{namespace}/repos"
+
+    create_status, create_response = _github_api_request(
+        token=token,
+        method="POST",
+        path=create_path,
+        payload=create_payload,
+    )
+    if create_status in {200, 201}:
+        return {
+            "provider": "github",
+            "namespace": namespace,
+            "repo_name": repo_name,
+            "status": "created",
+            "created": True,
+            "api_path": create_path,
+            "html_url": str(create_response.get("html_url") or ""),
+        }
+
+    create_message = str(create_response.get("message") or "create_failed")
+    if create_status == 422 and "already exists" in create_message.lower():
+        return {
+            "provider": "github",
+            "namespace": namespace,
+            "repo_name": repo_name,
+            "status": "exists",
+            "created": False,
+            "api_path": repo_path,
+            "html_url": str(create_response.get("html_url") or ""),
+        }
+    raise RuntimeError(f"GitHub repository create failed for {namespace}/{repo_name}: {create_message}")
 
 
 def _load_autonomy_settings(db_client) -> dict[str, str]:
@@ -954,61 +1069,83 @@ def execute_autonomy_run(
                 run_id=run_id,
             )
         else:
-            bootstrap_command = _bootstrap_command_parts(
-                project_root,
-                {
-                    "local_path": repo["local_path"],
-                    "primary_remote_env": repo["primary_remote_env"],
-                    "mirror_remote_env": repo.get("mirror_remote_env", ""),
-                },
-                str(repo["effective_primary_remote"]),
-            )
-            bootstrap_proc = subprocess.run(
-                bootstrap_command,
-                capture_output=True,
-                text=True,
-                check=False,
-            )
-            result_detail["bootstrap_stdout"] = _truncate_output(bootstrap_proc.stdout)
-            result_detail["bootstrap_stderr"] = _truncate_output(bootstrap_proc.stderr)
-            post_origin = _local_origin_url(repo_path)
-            result_detail["origin_after_bootstrap"] = post_origin
-
-            if bootstrap_proc.returncode != 0:
-                rollback_applied = _restore_origin(repo_path, str(repo.get("local_origin_remote") or ""))
+            try:
+                provider_result = ensure_provider_remote_exists(
+                    {
+                        "primary_remote": {
+                            "provider": repo["provider"],
+                            "namespace": repo["namespace"],
+                            "repo_name": repo["repo_name"],
+                            "credential_ref": repo["credential_ref"],
+                        }
+                    }
+                )
+            except RuntimeError as exc:
                 status = "quarantined"
                 validation_status = "not_run"
                 quarantine_status = "quarantined"
-                quarantine_reason = "bootstrap_failed"
+                quarantine_reason = "provider_create_failed"
+                result_detail["provider_error"] = str(exc)
             else:
-                validation_command = _validation_command_parts(project_root)
-                validation_env = os.environ.copy()
-                validation_env.setdefault(
-                    "GIT_GOVERNANCE_STRICT",
-                    "1" if policy["require_strict_validation"] else "0",
+                result_detail["provider_result"] = provider_result
+                rollback_anchor["provider_repo_created"] = bool(provider_result["created"])
+                rollback_anchor["provider_repo_status"] = provider_result["status"]
+
+                bootstrap_command = _bootstrap_command_parts(
+                    project_root,
+                    {
+                        "local_path": repo["local_path"],
+                        "primary_remote_env": repo["primary_remote_env"],
+                        "mirror_remote_env": repo.get("mirror_remote_env", ""),
+                    },
+                    str(repo["effective_primary_remote"]),
                 )
-                validation_proc = subprocess.run(
-                    validation_command,
-                    cwd=project_root,
-                    env=validation_env,
+                bootstrap_proc = subprocess.run(
+                    bootstrap_command,
                     capture_output=True,
                     text=True,
                     check=False,
                 )
-                result_detail["validation_command"] = shlex.join(validation_command)
-                result_detail["validation_stdout"] = _truncate_output(validation_proc.stdout)
-                result_detail["validation_stderr"] = _truncate_output(validation_proc.stderr)
-                if validation_proc.returncode != 0:
+                result_detail["bootstrap_stdout"] = _truncate_output(bootstrap_proc.stdout)
+                result_detail["bootstrap_stderr"] = _truncate_output(bootstrap_proc.stderr)
+                post_origin = _local_origin_url(repo_path)
+                result_detail["origin_after_bootstrap"] = post_origin
+
+                if bootstrap_proc.returncode != 0:
                     rollback_applied = _restore_origin(repo_path, str(repo.get("local_origin_remote") or ""))
                     status = "quarantined"
-                    validation_status = "failed"
+                    validation_status = "not_run"
                     quarantine_status = "quarantined"
-                    quarantine_reason = "validation_failed"
+                    quarantine_reason = "bootstrap_failed"
                 else:
-                    status = "completed"
-                    validation_status = "passed"
-                    quarantine_status = "clear"
-                    quarantine_reason = ""
+                    validation_command = _validation_command_parts(project_root)
+                    validation_env = os.environ.copy()
+                    validation_env.setdefault(
+                        "GIT_GOVERNANCE_STRICT",
+                        "1" if policy["require_strict_validation"] else "0",
+                    )
+                    validation_proc = subprocess.run(
+                        validation_command,
+                        cwd=project_root,
+                        env=validation_env,
+                        capture_output=True,
+                        text=True,
+                        check=False,
+                    )
+                    result_detail["validation_command"] = shlex.join(validation_command)
+                    result_detail["validation_stdout"] = _truncate_output(validation_proc.stdout)
+                    result_detail["validation_stderr"] = _truncate_output(validation_proc.stderr)
+                    if validation_proc.returncode != 0:
+                        rollback_applied = _restore_origin(repo_path, str(repo.get("local_origin_remote") or ""))
+                        status = "quarantined"
+                        validation_status = "failed"
+                        quarantine_status = "quarantined"
+                        quarantine_reason = "validation_failed"
+                    else:
+                        status = "completed"
+                        validation_status = "passed"
+                        quarantine_status = "clear"
+                        quarantine_reason = ""
 
             final_origin = _local_origin_url(repo_path)
             rollback_anchor["origin_after_rollback"] = final_origin
@@ -1090,9 +1227,12 @@ def execute_autonomy_run(
         run_status = "quarantined"
         run_validation_status = "failed"
         run_quarantine_status = "quarantined"
-        run_quarantine_reason = "validation_failed" if any(
-            item["quarantine_reason"] == "validation_failed" for item in repo_results
-        ) else "bootstrap_failed"
+        if any(item["quarantine_reason"] == "validation_failed" for item in repo_results):
+            run_quarantine_reason = "validation_failed"
+        elif any(item["quarantine_reason"] == "provider_create_failed" for item in repo_results):
+            run_quarantine_reason = "provider_create_failed"
+        else:
+            run_quarantine_reason = "bootstrap_failed"
     elif "blocked" in repo_statuses:
         run_status = "blocked"
         run_validation_status = "blocked"

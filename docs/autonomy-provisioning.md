@@ -4,7 +4,7 @@
 
 Wave 2 upgrades autonomy from preflight-only planning to an audited executor runtime.
 
-`ops/repository-topology.json` still defines the governed-repo contract, but routine work now flows through an always-on executor host, durable audit tables, topology sync, and deployment provenance sync.
+`ops/repository-topology.json` still defines the governed-repo contract, but routine work now flows through an always-on executor host, GitHub provider-side repo creation, durable audit tables, topology sync, and deployment provenance sync.
 
 ## Single Source Of Truth
 
@@ -35,6 +35,8 @@ Each governed repository entry carries:
 Wave 2 uses `allowed_modes: ["dry_run", "provision"]`, `wave: 2`, and `preflight_only: false`.
 
 `credential_ref` points at the server-side environment variable that holds the non-human provider credential. The current GitHub provider reference remains `GITHUB_AUTONOMY_TOKEN`.
+
+When `create_if_missing` is true, the executor uses that provider credential to create the missing GitHub repository before bootstrapping the local `origin` contract.
 
 ## Policy Gates
 
@@ -93,6 +95,7 @@ Each live executor run records:
 - trigger source
 - actor identity
 - credential class
+- provider-side repo action (`exists` or `created`)
 - requested mode
 - commit anchor
 - rollback anchor
