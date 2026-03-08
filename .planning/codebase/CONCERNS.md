@@ -32,17 +32,7 @@
   - runtime foundation tests cover the basic bootstrap contract
 - Residual concern: a bad seed/sync change can become a boot-time regression rather than an isolated admin task failure
 
-### 3. The clean repo still has hidden fallback coupling to the archived source project
-
-- Risk: some operational scripts will read `../IAn/.env*` if repo-local env files are absent, which means the clean target is not fully self-contained
-- Evidence:
-  - `scripts/_cpanel_common.sh`
-  - `scripts/_git_governance_common.sh`
-- Current mitigation:
-  - repo-local `.env.local` works and should be preferred
-- Residual concern: this can mask missing configuration and reintroduce brownfield dependence during operations or validation
-
-### 4. Catalog metadata still contains brownfield-era path drift
+### 3. Catalog metadata still contains brownfield-era path drift
 
 - Risk: the runtime layout is now `api/` + `src/` + `dist/`, but some catalog metadata still points at `backend/*` and `backend/static/*`
 - Evidence:
@@ -52,7 +42,7 @@
   - tests verify the clean target excludes the old `frontend/` and `backend/static/ui` paths
 - Residual concern: dashboards, reports, or future tooling can misread the codebase if they trust the catalog blindly
 
-### 5. Autonomous repo provisioning is implemented but not fully operational by default
+### 4. Autonomous repo provisioning is implemented but not fully operational by default
 
 - Risk: the system can plan and execute governed repo provisioning, but real autonomy still depends on executor-host rollout and `GITHUB_AUTONOMY_TOKEN`
 - Evidence:
@@ -66,7 +56,7 @@
   - validation scripts
 - Residual concern: code completeness can be mistaken for live operational autonomy
 
-### 6. Validation is strong, but mostly script-driven rather than CI-enforced
+### 5. Validation is strong, but mostly script-driven rather than CI-enforced
 
 - Risk: `scripts/validate_ai_enterprise.sh` is comprehensive, but there is no repo-local CI workflow guaranteeing it runs on every change
 - Evidence:

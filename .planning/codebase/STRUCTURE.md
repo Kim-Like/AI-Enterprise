@@ -94,7 +94,6 @@ Important nuance:
 ## Structure Drift And Oddities
 
 - `api/config/application_catalog.json` still describes some `backend/*` and `backend/static/*` locations from the original source project
-- `scripts/_cpanel_common.sh` and `scripts/_git_governance_common.sh` still fall back to `../IAn/.env*` if repo-local env files are missing
 - The repo intentionally mixes source, docs, policy, generated bundle, and runtime database files at the top level, but generated/runtime files are ignored by Git
 
 ## External Workspace Expectations

@@ -16,8 +16,6 @@ load_git_env_optional() {
   local candidates=(
     "${PROJECT_ROOT}/.env.local"
     "${PROJECT_ROOT}/.env"
-    "${PROJECT_ROOT}/../IAn/.env.local"
-    "${PROJECT_ROOT}/../IAn/.env"
   )
 
   local env_file=""

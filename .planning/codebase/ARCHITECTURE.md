@@ -111,5 +111,4 @@ This means boot is not passive; it actively reconciles runtime state on every st
 ## Architectural Drift To Track
 
 - `api/config/application_catalog.json` still contains some path metadata from the pre-duplication source layout
-- `scripts/_cpanel_common.sh` and `scripts/_git_governance_common.sh` still allow fallback to archived `IAn` env files
 - Portfolio payloads remain heterogeneous by design, so the registry layer is the normalizer rather than the payload directories themselves
