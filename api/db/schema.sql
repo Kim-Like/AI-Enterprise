@@ -737,7 +737,14 @@ INSERT OR IGNORE INTO settings (key, value, description) VALUES
     ('ENGINEER_CONTEXT_GUARD_REQUIRED', '1', 'Require context links and memory delta before engineer task completion'),
     ('ARTISAN_MASTER_SSH_SCOPE', 'controlled_ops', 'Artisan master SSH authority policy'),
     ('ARTISAN_MASTER_INTAKE_MODE', 'workspace_queue', 'Artisan master intake handling mode'),
-    ('ARTISAN_WP_THEME_IDENTITY_ENFORCED', '1', 'Enforce Saren child theme identity for The Artisan');
+    ('ARTISAN_WP_THEME_IDENTITY_ENFORCED', '1', 'Enforce Saren child theme identity for The Artisan'),
+    ('AUTONOMY_ENABLED', '0', 'Soft kill switch for all autonomous actions'),
+    ('AUTONOMY_MODE', 'dry_run', 'Autonomy mode (off|dry_run|provision)'),
+    ('AUTONOMY_REPO_PROVISIONING_ENABLED', '0', 'Allow topology-driven repo provisioning preflight and later live execution'),
+    ('AUTONOMY_ALLOWED_REPOSITORY_IDS', '', 'Comma-separated repository ids allowed for autonomous repo provisioning'),
+    ('AUTONOMY_REQUIRE_STRICT_VALIDATION', '1', 'Require strict validation before autonomy escalates beyond preflight'),
+    ('AUTONOMY_ALLOW_DESTRUCTIVE_ACTIONS', '0', 'Allow destructive autonomy actions such as remote deletion'),
+    ('AUTONOMY_AUDIT_READY', '0', 'Durable audit plumbing readiness gate for live autonomy writes');
 
 INSERT OR IGNORE INTO master_agents (id, name, type, status, description) VALUES
     ('father', 'IAn', 'orchestrator', 'active', 'Top-level orchestration authority'),

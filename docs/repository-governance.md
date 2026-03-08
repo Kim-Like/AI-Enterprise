@@ -46,6 +46,14 @@ Archive a surface when any of these are true:
 - A Tailscale-reachable bare Git mirror may be added later if private redundancy is needed.
 - The provider is replaceable; the Git history is the invariant.
 
+## Provisioning Sync Rule
+
+Wave 1 autonomy provisioning must read from `ops/repository-topology.json`, not a second repo inventory.
+
+- `primary_remote_env` stays the runtime override for a configured remote URL.
+- `primary_remote` supplies provider, namespace, repo name, protocol, creation eligibility, and credential reference when a remote must be derived.
+- `autonomy` keeps governed repo provisioning scoped to `dry_run` preflight until Phase 10 audit plumbing exists.
+
 ## Local Workflow
 
 1. Work locally.

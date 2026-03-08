@@ -1,11 +1,12 @@
 {
-  "version": 1,
+  "version": 2,
   "updated_at": "2026-03-08",
   "policy": {
     "code_source_of_truth": "git",
     "primary_remote_strategy": "github_ssh_kim_like",
     "mirror_strategy": "none_by_default",
     "primary_remote_namespace": "Kim-Like",
+    "autonomy_rollout_stage": "wave1_preflight_only",
     "deploy_target_rule": "cpanel_and_ssh_hosts_are_deploy_targets_only",
     "no_nested_repos": true
   },
@@ -36,6 +37,22 @@
       "local_path": "/Users/IAn/Agent/AI-Enterprise",
       "primary_remote_env": "AI_ENTERPRISE_PRIMARY_GIT_REMOTE",
       "mirror_remote_env": "AI_ENTERPRISE_GIT_MIRROR_REMOTE",
+      "primary_remote": {
+        "provider": "github",
+        "namespace": "Kim-Like",
+        "repo_name": "AI-Enterprise",
+        "protocol": "ssh",
+        "create_if_missing": true,
+        "credential_ref": "GITHUB_AUTONOMY_TOKEN"
+      },
+      "autonomy": {
+        "scope": "governed_remote_provisioning",
+        "allowed_modes": [
+          "dry_run"
+        ],
+        "wave": 1,
+        "preflight_only": true
+      },
       "deploy_targets": [
         {
           "type": "local_dashboard",
@@ -49,6 +66,22 @@
       "local_path": "/Users/IAn/Agent/sites/lavprishjemmeside.dk",
       "primary_remote_env": "LAVPRISHJEMMESIDE_PRIMARY_GIT_REMOTE",
       "mirror_remote_env": "LAVPRISHJEMMESIDE_GIT_MIRROR_REMOTE",
+      "primary_remote": {
+        "provider": "github",
+        "namespace": "Kim-Like",
+        "repo_name": "lavprishjemmeside.dk",
+        "protocol": "ssh",
+        "create_if_missing": true,
+        "credential_ref": "GITHUB_AUTONOMY_TOKEN"
+      },
+      "autonomy": {
+        "scope": "governed_remote_provisioning",
+        "allowed_modes": [
+          "dry_run"
+        ],
+        "wave": 1,
+        "preflight_only": true
+      },
       "deploy_targets": [
         {
           "type": "cpanel_repo",
@@ -70,6 +103,22 @@
       "local_path": "/Users/IAn/Agent/sites/ljdesignstudio.dk",
       "primary_remote_env": "LJDESIGNSTUDIO_PRIMARY_GIT_REMOTE",
       "mirror_remote_env": "LJDESIGNSTUDIO_GIT_MIRROR_REMOTE",
+      "primary_remote": {
+        "provider": "github",
+        "namespace": "Kim-Like",
+        "repo_name": "ljdesignstudio.dk",
+        "protocol": "ssh",
+        "create_if_missing": true,
+        "credential_ref": "GITHUB_AUTONOMY_TOKEN"
+      },
+      "autonomy": {
+        "scope": "governed_remote_provisioning",
+        "allowed_modes": [
+          "dry_run"
+        ],
+        "wave": 1,
+        "preflight_only": true
+      },
       "deploy_targets": [
         {
           "type": "cpanel_repo",
@@ -91,6 +140,22 @@
       "local_path": "/Users/IAn/Agent/sites/reporting.theartisan.dk",
       "primary_remote_env": "ARTISAN_REPORTING_PRIMARY_GIT_REMOTE",
       "mirror_remote_env": "ARTISAN_REPORTING_GIT_MIRROR_REMOTE",
+      "primary_remote": {
+        "provider": "github",
+        "namespace": "Kim-Like",
+        "repo_name": "reporting.theartisan.dk",
+        "protocol": "ssh",
+        "create_if_missing": true,
+        "credential_ref": "GITHUB_AUTONOMY_TOKEN"
+      },
+      "autonomy": {
+        "scope": "governed_remote_provisioning",
+        "allowed_modes": [
+          "dry_run"
+        ],
+        "wave": 1,
+        "preflight_only": true
+      },
       "deploy_targets": [
         {
           "type": "public_site",

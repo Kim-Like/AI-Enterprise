@@ -11,7 +11,17 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 from starlette.requests import Request
 
 from api.bootstrap import build_runtime, run_startup
-from api.routes import applications, control_ui, datastores, health, meta, orchestration, secrets, settings
+from api.routes import (
+    applications,
+    autonomy,
+    control_ui,
+    datastores,
+    health,
+    meta,
+    orchestration,
+    secrets,
+    settings,
+)
 
 
 def create_app(*, db_path_override: str | None = None) -> FastAPI:
@@ -54,6 +64,7 @@ def create_app(*, db_path_override: str | None = None) -> FastAPI:
 
     app.include_router(health.router)
     app.include_router(applications.router, prefix="/api")
+    app.include_router(autonomy.router, prefix="/api")
     app.include_router(control_ui.router, prefix="/api")
     app.include_router(datastores.router, prefix="/api")
     app.include_router(meta.router, prefix="/api")

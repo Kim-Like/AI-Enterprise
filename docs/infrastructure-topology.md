@@ -65,6 +65,14 @@ github.com/Kim-Like/
 
 These repositories are the primary remote endpoints. Working trees or release checkouts on app hosts are downstream from them.
 
+## Autonomy Provisioning
+
+Wave 1 extends `ops/repository-topology.json` with per-repository `primary_remote` and `autonomy` metadata.
+
+That metadata does not replace the Phase 9 env contract. `*_PRIMARY_GIT_REMOTE` remains the runtime override when a remote is already configured, while the manifest remains the canonical desired-state contract for governed remote provisioning preflight.
+
+See `docs/autonomy-provisioning.md` for the Wave 1 policy and dry-run rules.
+
 ## Repo Boundaries
 
 ### Main Repo
@@ -97,3 +105,4 @@ These repositories are the primary remote endpoints. Working trees or release ch
 - Topology manifest: `ops/repository-topology.json`
 - Governance policy: `docs/repository-governance.md`
 - Deploy provenance: `docs/deployment-provenance.md`
+- Autonomy provisioning: `docs/autonomy-provisioning.md`

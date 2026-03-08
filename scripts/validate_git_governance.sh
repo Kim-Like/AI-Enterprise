@@ -54,6 +54,8 @@ if data.get("policy", {}).get("code_source_of_truth") != "git":
     raise SystemExit("policy.code_source_of_truth must be 'git'")
 if not data.get("policy", {}).get("no_nested_repos"):
     raise SystemExit("policy.no_nested_repos must be true")
+if data.get("policy", {}).get("autonomy_rollout_stage") != "wave1_preflight_only":
+    raise SystemExit("policy.autonomy_rollout_stage must be 'wave1_preflight_only'")
 
 repos = data.get("repositories", [])
 repo_ids = {repo["id"] for repo in repos}
@@ -63,12 +65,47 @@ if sum(1 for repo in repos if repo.get("classification") == "main") != 1:
 for repo in repos:
     if repo.get("classification") not in {"main", "independent"}:
         raise SystemExit(f"repository {repo.get('id')} has invalid classification")
+    primary_remote = repo.get("primary_remote")
+    autonomy = repo.get("autonomy")
+    if not isinstance(primary_remote, dict):
+        raise SystemExit(f"repository {repo.get('id')} is missing primary_remote metadata")
+    if not isinstance(autonomy, dict):
+        raise SystemExit(f"repository {repo.get('id')} is missing autonomy metadata")
+    if primary_remote.get("provider") != "github":
+        raise SystemExit(f"repository {repo.get('id')} must use provider github in phase 10")
+    if primary_remote.get("protocol") not in {"ssh", "https"}:
+        raise SystemExit(f"repository {repo.get('id')} has unsupported protocol")
+    for field in ("namespace", "repo_name", "credential_ref"):
+        if not str(primary_remote.get(field) or "").strip():
+            raise SystemExit(f"repository {repo.get('id')} is missing primary_remote.{field}")
+    if not isinstance(primary_remote.get("create_if_missing"), bool):
+        raise SystemExit(f"repository {repo.get('id')} must declare primary_remote.create_if_missing")
+    allowed_modes = autonomy.get("allowed_modes")
+    if not isinstance(allowed_modes, list) or "dry_run" not in allowed_modes:
+        raise SystemExit(f"repository {repo.get('id')} must allow dry_run autonomy mode")
+    if autonomy.get("preflight_only") is not True:
+        raise SystemExit(f"repository {repo.get('id')} must remain preflight_only in wave 1")
+    if autonomy.get("wave") != 1:
+        raise SystemExit(f"repository {repo.get('id')} must declare autonomy.wave = 1")
+    if not str(autonomy.get("scope") or "").strip():
+        raise SystemExit(f"repository {repo.get('id')} is missing autonomy.scope")
     print(
         "REPO|{id}|{cls}|{env}|{mirror}".format(
             id=repo["id"],
             cls=repo["classification"],
             env=repo.get("primary_remote_env", ""),
             mirror=repo.get("mirror_remote_env", ""),
+        )
+    )
+    print(
+        "PROVISIONING|{id}|{provider}|{namespace}|{repo_name}|{credential_ref}|{create_if_missing}|{modes}".format(
+            id=repo["id"],
+            provider=primary_remote.get("provider", ""),
+            namespace=primary_remote.get("namespace", ""),
+            repo_name=primary_remote.get("repo_name", ""),
+            credential_ref=primary_remote.get("credential_ref", ""),
+            create_if_missing=str(primary_remote.get("create_if_missing", False)).lower(),
+            modes=",".join(str(item).strip() for item in allowed_modes if str(item).strip()),
         )
     )
 
@@ -138,6 +175,10 @@ while IFS= read -r line; do
       IFS='|' read -r _ repo_count surface_count <<< "${line}"
       echo "topology_repositories=${repo_count}"
       echo "topology_surfaces=${surface_count}"
+      ;;
+    PROVISIONING\|*)
+      IFS='|' read -r _ repo_id provider namespace repo_name credential_ref create_if_missing modes <<< "${line}"
+      echo "provisioning_contract_ok=${repo_id} provider=${provider} namespace=${namespace} repo_name=${repo_name} credential_ref=${credential_ref} create_if_missing=${create_if_missing} modes=${modes}"
       ;;
   esac
 done <<< "${manifest_report}"
