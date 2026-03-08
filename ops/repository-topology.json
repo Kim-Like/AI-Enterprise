@@ -1,0 +1,342 @@
+{
+  "version": 1,
+  "updated_at": "2026-03-08",
+  "policy": {
+    "code_source_of_truth": "git",
+    "primary_remote_strategy": "github_ssh_kim_like",
+    "mirror_strategy": "none_by_default",
+    "primary_remote_namespace": "Kim-Like",
+    "deploy_target_rule": "cpanel_and_ssh_hosts_are_deploy_targets_only",
+    "no_nested_repos": true
+  },
+  "workspace_layout": {
+    "workspace_root": "/Users/IAn/Agent",
+    "top_level_paths": [
+      {
+        "path": "/Users/IAn/Agent/AI-Enterprise",
+        "kind": "main_repo",
+        "description": "Main control-plane repository."
+      },
+      {
+        "path": "/Users/IAn/Agent/sites",
+        "kind": "independent_repos",
+        "description": "Optional local clones of independently deployed live surfaces."
+      },
+      {
+        "path": "/Users/IAn/Agent/archive",
+        "kind": "archive",
+        "description": "Non-live or migration-hold material."
+      }
+    ]
+  },
+  "repositories": [
+    {
+      "id": "ai-enterprise",
+      "classification": "main",
+      "local_path": "/Users/IAn/Agent/AI-Enterprise",
+      "primary_remote_env": "AI_ENTERPRISE_PRIMARY_GIT_REMOTE",
+      "mirror_remote_env": "AI_ENTERPRISE_GIT_MIRROR_REMOTE",
+      "deploy_targets": [
+        {
+          "type": "local_dashboard",
+          "url": "http://127.0.0.1:8001/"
+        }
+      ]
+    },
+    {
+      "id": "lavprishjemmeside.dk",
+      "classification": "independent",
+      "local_path": "/Users/IAn/Agent/sites/lavprishjemmeside.dk",
+      "primary_remote_env": "LAVPRISHJEMMESIDE_PRIMARY_GIT_REMOTE",
+      "mirror_remote_env": "LAVPRISHJEMMESIDE_GIT_MIRROR_REMOTE",
+      "deploy_targets": [
+        {
+          "type": "cpanel_repo",
+          "path": "ssh://theartis@cp10.nordicway.dk/home/theartis/repositories/lavprishjemmeside.dk"
+        },
+        {
+          "type": "public_site",
+          "url": "https://lavprishjemmeside.dk"
+        },
+        {
+          "type": "public_api",
+          "url": "https://api.lavprishjemmeside.dk"
+        }
+      ]
+    },
+    {
+      "id": "ljdesignstudio.dk",
+      "classification": "independent",
+      "local_path": "/Users/IAn/Agent/sites/ljdesignstudio.dk",
+      "primary_remote_env": "LJDESIGNSTUDIO_PRIMARY_GIT_REMOTE",
+      "mirror_remote_env": "LJDESIGNSTUDIO_GIT_MIRROR_REMOTE",
+      "deploy_targets": [
+        {
+          "type": "cpanel_repo",
+          "path": "ssh://theartis@cp10.nordicway.dk/home/theartis/repositories/ljdesignstudio.dk"
+        },
+        {
+          "type": "public_site",
+          "url": "https://ljdesignstudio.dk"
+        },
+        {
+          "type": "public_api",
+          "url": "https://api.ljdesignstudio.dk"
+        }
+      ]
+    },
+    {
+      "id": "reporting.theartisan.dk",
+      "classification": "independent",
+      "local_path": "/Users/IAn/Agent/sites/reporting.theartisan.dk",
+      "primary_remote_env": "ARTISAN_REPORTING_PRIMARY_GIT_REMOTE",
+      "mirror_remote_env": "ARTISAN_REPORTING_GIT_MIRROR_REMOTE",
+      "deploy_targets": [
+        {
+          "type": "public_site",
+          "url": "https://reporting.theartisan.dk"
+        }
+      ]
+    }
+  ],
+  "surfaces": [
+    {
+      "id": "ian-control-plane",
+      "entity_type": "program",
+      "classification": "main",
+      "repository_id": "ai-enterprise",
+      "status": "active"
+    },
+    {
+      "id": "artisan-reporting",
+      "entity_type": "program",
+      "classification": "independent",
+      "repository_id": "reporting.theartisan.dk",
+      "status": "active"
+    },
+    {
+      "id": "artisan-wordpress",
+      "entity_type": "program",
+      "classification": "embedded",
+      "repository_id": "ai-enterprise",
+      "status": "active"
+    },
+    {
+      "id": "artisan-email-marketing",
+      "entity_type": "program",
+      "classification": "embedded",
+      "repository_id": "ai-enterprise",
+      "status": "planned"
+    },
+    {
+      "id": "baltzer-reporting",
+      "entity_type": "program",
+      "classification": "embedded",
+      "repository_id": "ai-enterprise",
+      "status": "active"
+    },
+    {
+      "id": "baltzer-shopify",
+      "entity_type": "program",
+      "classification": "embedded",
+      "repository_id": "ai-enterprise",
+      "status": "active"
+    },
+    {
+      "id": "baltzer-tcg-index",
+      "entity_type": "program",
+      "classification": "archive",
+      "repository_id": "ai-enterprise",
+      "status": "planned"
+    },
+    {
+      "id": "lavprishjemmeside-cms",
+      "entity_type": "program",
+      "classification": "independent",
+      "repository_id": "lavprishjemmeside.dk",
+      "status": "active"
+    },
+    {
+      "id": "personal-assistant-suite",
+      "entity_type": "program",
+      "classification": "embedded",
+      "repository_id": "ai-enterprise",
+      "status": "planned"
+    },
+    {
+      "id": "samlino-seo-agent-playground",
+      "entity_type": "program",
+      "classification": "embedded",
+      "repository_id": "ai-enterprise",
+      "status": "active"
+    },
+    {
+      "id": "artisan-email-marketing",
+      "entity_type": "application",
+      "classification": "embedded",
+      "repository_id": "ai-enterprise",
+      "status": "planned"
+    },
+    {
+      "id": "artisan-reporting-app",
+      "entity_type": "application",
+      "classification": "embedded",
+      "repository_id": "reporting.theartisan.dk",
+      "status": "active"
+    },
+    {
+      "id": "artisan-b2b-dashboard-orders",
+      "entity_type": "application",
+      "classification": "embedded",
+      "repository_id": "ai-enterprise",
+      "status": "placeholder"
+    },
+    {
+      "id": "artisan-wordpress-site",
+      "entity_type": "application",
+      "classification": "embedded",
+      "repository_id": "ai-enterprise",
+      "status": "active"
+    },
+    {
+      "id": "baltzer-reporting-app",
+      "entity_type": "application",
+      "classification": "embedded",
+      "repository_id": "ai-enterprise",
+      "status": "active"
+    },
+    {
+      "id": "baltzer-employee-schedule-salary-api",
+      "entity_type": "application",
+      "classification": "embedded",
+      "repository_id": "ai-enterprise",
+      "status": "placeholder"
+    },
+    {
+      "id": "baltzer-event-management-platform",
+      "entity_type": "application",
+      "classification": "embedded",
+      "repository_id": "ai-enterprise",
+      "status": "placeholder"
+    },
+    {
+      "id": "baltzer-shopify-core",
+      "entity_type": "application",
+      "classification": "embedded",
+      "repository_id": "ai-enterprise",
+      "status": "active"
+    },
+    {
+      "id": "baltzer-social-media-management",
+      "entity_type": "application",
+      "classification": "embedded",
+      "repository_id": "ai-enterprise",
+      "status": "placeholder"
+    },
+    {
+      "id": "baltzer-tcg-index-app",
+      "entity_type": "application",
+      "classification": "archive",
+      "repository_id": "ai-enterprise",
+      "status": "planned"
+    },
+    {
+      "id": "ian-mission-control",
+      "entity_type": "application",
+      "classification": "main",
+      "repository_id": "ai-enterprise",
+      "status": "active"
+    },
+    {
+      "id": "lavprishjemmeside-ads-dashboard",
+      "entity_type": "application",
+      "classification": "embedded",
+      "repository_id": "lavprishjemmeside.dk",
+      "status": "placeholder"
+    },
+    {
+      "id": "lavprishjemmeside-ai-cms",
+      "entity_type": "application",
+      "classification": "embedded",
+      "repository_id": "lavprishjemmeside.dk",
+      "status": "active"
+    },
+    {
+      "id": "lavprishjemmeside-client-subscription-overview",
+      "entity_type": "application",
+      "classification": "embedded",
+      "repository_id": "ljdesignstudio.dk",
+      "status": "placeholder"
+    },
+    {
+      "id": "lavprishjemmeside-seo-dashboard",
+      "entity_type": "application",
+      "classification": "embedded",
+      "repository_id": "lavprishjemmeside.dk",
+      "status": "placeholder"
+    },
+    {
+      "id": "personal-assistant-calendar-management",
+      "entity_type": "application",
+      "classification": "embedded",
+      "repository_id": "ai-enterprise",
+      "status": "placeholder"
+    },
+    {
+      "id": "personal-assistant-email-management",
+      "entity_type": "application",
+      "classification": "embedded",
+      "repository_id": "ai-enterprise",
+      "status": "placeholder"
+    },
+    {
+      "id": "personal-assistant-fitness-dashboard",
+      "entity_type": "application",
+      "classification": "embedded",
+      "repository_id": "ai-enterprise",
+      "status": "placeholder"
+    },
+    {
+      "id": "personal-assistant-social-media-management",
+      "entity_type": "application",
+      "classification": "embedded",
+      "repository_id": "ai-enterprise",
+      "status": "placeholder"
+    },
+    {
+      "id": "personal-assistant-task-manager",
+      "entity_type": "application",
+      "classification": "embedded",
+      "repository_id": "ai-enterprise",
+      "status": "placeholder"
+    },
+    {
+      "id": "samlino-prototyper-runtime",
+      "entity_type": "application",
+      "classification": "embedded",
+      "repository_id": "ai-enterprise",
+      "status": "active"
+    },
+    {
+      "id": "samlino-seo-agent-playground-app",
+      "entity_type": "application",
+      "classification": "embedded",
+      "repository_id": "ai-enterprise",
+      "status": "active"
+    },
+    {
+      "id": "samlino-seo-audit-runtime",
+      "entity_type": "application",
+      "classification": "embedded",
+      "repository_id": "ai-enterprise",
+      "status": "active"
+    },
+    {
+      "id": "samlino-seo-schema-runtime",
+      "entity_type": "application",
+      "classification": "embedded",
+      "repository_id": "ai-enterprise",
+      "status": "active"
+    }
+  ]
+}
