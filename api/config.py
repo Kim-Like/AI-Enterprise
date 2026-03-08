@@ -41,8 +41,11 @@ def load_settings(
     db_path_override: str | None = None,
 ) -> Settings:
     root = project_root or Path(__file__).resolve().parent.parent
+    # Environment variables provided by the active process should take
+    # precedence over local dotenv files so tests and deployment shells can
+    # override file defaults safely.
     load_dotenv(root / ".env")
-    load_dotenv(root / ".env.local", override=True)
+    load_dotenv(root / ".env.local")
     db_path = Path(db_path_override or os.getenv("DB_PATH", str(root / "ai_enterprise.db")))
     cors_origin = os.getenv("CORS_ORIGIN", "http://localhost:8001")
     cors_origins = [item.strip() for item in cors_origin.split(",") if item.strip()]
