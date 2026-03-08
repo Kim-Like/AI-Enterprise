@@ -7,7 +7,7 @@
 - Placeholder admin secrets are rejected by default.
 - Settings reads and writes are admin-only.
 - Secret and connection status routes return metadata and evidence, never values.
-- Autonomous provisioning stays behind explicit policy flags and remains preflight-only in Wave 1.
+- Autonomous provisioning stays behind explicit policy flags, executor scoping, audit readiness, and host kill-switch controls.
 
 ## Auth Matrix
 
@@ -17,6 +17,10 @@
 | `PUT /api/settings/{key}` | admin key only |
 | `GET /api/autonomy/policy` | admin key or autonomy key |
 | `POST /api/autonomy/provisioning/preflight` | admin key or autonomy key plus autonomy policy |
+| `GET /api/autonomy/executor` | admin key or autonomy key |
+| `POST /api/autonomy/executor/run` | admin key or autonomy key plus executor and autonomy policy |
+| `GET /api/autonomy/audit/runs` | admin key or autonomy key |
+| `GET /api/autonomy/sync/repositories` | admin key or autonomy key |
 | `GET /api/datastores/verify` | admin key or autonomy key |
 | `GET /api/control-ui/secrets/status` | admin key or autonomy key |
 | `POST /api/control-ui/secrets/test/{key_name}` | admin key only |
@@ -31,8 +35,9 @@
 
 - `IAN_AUTONOMY_KEY` remains the routine service credential for automation.
 - Admin access can manage the policy, but it does not bypass the autonomy kill switch or allowed repository scope on the provisioning preflight route.
-- `AUTONOMY_ENABLED`, `AUTONOMY_MODE`, `AUTONOMY_REPO_PROVISIONING_ENABLED`, and `AUTONOMY_ALLOWED_REPOSITORY_IDS` must all permit the request before a governed provisioning preflight is returned.
-- Wave 1 blocks live provisioning even when policy mode is set to `provision`.
+- `AUTONOMY_ENABLED`, `AUTONOMY_MODE`, `AUTONOMY_REPO_PROVISIONING_ENABLED`, `AUTONOMY_ALLOWED_REPOSITORY_IDS`, `AUTONOMY_EXECUTOR_ENABLED`, and `AUTONOMY_EXECUTOR_ALLOWED_AGENTS` must all permit the request before a live executor run is returned.
+- The executor host also enforces `AUTONOMY_HARD_DISABLE` or the kill-switch file configured by `AUTONOMY_HOST_KILL_SWITCH_FILE`.
+- Live provisioning requires `AUTONOMY_MODE=provision` and `AUTONOMY_AUDIT_READY=1`; failures quarantine and roll back the local remote contract instead of continuing.
 
 ## Secret Inventory
 

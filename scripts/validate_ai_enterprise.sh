@@ -45,6 +45,7 @@ park_node_modules
 export PYTHONPATH="$ROOT"
 python3 -m pytest -p no:cacheprovider tests/api tests/test_agent_hierarchy.py tests/test_program_payloads.py tests/test_phase10_contracts.py -q
 
+AI_ENTERPRISE_PARENT_VALIDATION=1 bash "$ROOT/scripts/validate_autonomy.sh"
 bash "$ROOT/scripts/validate_git_governance.sh"
 bash "$ROOT/scripts/check_remote_config_contract.sh"
 bash "$ROOT/scripts/verify_remote_portfolio.sh"

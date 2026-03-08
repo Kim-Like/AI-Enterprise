@@ -54,8 +54,8 @@ if data.get("policy", {}).get("code_source_of_truth") != "git":
     raise SystemExit("policy.code_source_of_truth must be 'git'")
 if not data.get("policy", {}).get("no_nested_repos"):
     raise SystemExit("policy.no_nested_repos must be true")
-if data.get("policy", {}).get("autonomy_rollout_stage") != "wave1_preflight_only":
-    raise SystemExit("policy.autonomy_rollout_stage must be 'wave1_preflight_only'")
+if data.get("policy", {}).get("autonomy_rollout_stage") != "wave2_audited_execution":
+    raise SystemExit("policy.autonomy_rollout_stage must be 'wave2_audited_execution'")
 
 repos = data.get("repositories", [])
 repo_ids = {repo["id"] for repo in repos}
@@ -81,12 +81,12 @@ for repo in repos:
     if not isinstance(primary_remote.get("create_if_missing"), bool):
         raise SystemExit(f"repository {repo.get('id')} must declare primary_remote.create_if_missing")
     allowed_modes = autonomy.get("allowed_modes")
-    if not isinstance(allowed_modes, list) or "dry_run" not in allowed_modes:
-        raise SystemExit(f"repository {repo.get('id')} must allow dry_run autonomy mode")
-    if autonomy.get("preflight_only") is not True:
-        raise SystemExit(f"repository {repo.get('id')} must remain preflight_only in wave 1")
-    if autonomy.get("wave") != 1:
-        raise SystemExit(f"repository {repo.get('id')} must declare autonomy.wave = 1")
+    if not isinstance(allowed_modes, list) or "dry_run" not in allowed_modes or "provision" not in allowed_modes:
+        raise SystemExit(f"repository {repo.get('id')} must allow dry_run and provision autonomy modes")
+    if autonomy.get("preflight_only") is not False:
+        raise SystemExit(f"repository {repo.get('id')} must clear preflight_only in wave 2")
+    if autonomy.get("wave") != 2:
+        raise SystemExit(f"repository {repo.get('id')} must declare autonomy.wave = 2")
     if not str(autonomy.get("scope") or "").strip():
         raise SystemExit(f"repository {repo.get('id')} is missing autonomy.scope")
     print(

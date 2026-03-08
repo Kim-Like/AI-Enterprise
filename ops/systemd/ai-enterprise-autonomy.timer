@@ -1,0 +1,12 @@
+[Unit]
+Description=Run AI-Enterprise autonomy executor on a schedule
+
+[Timer]
+OnBootSec=2m
+OnUnitActiveSec=10m
+AccuracySec=30s
+Unit=ai-enterprise-autonomy.service
+Persistent=true
+
+[Install]
+WantedBy=timers.target

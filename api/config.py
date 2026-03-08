@@ -22,6 +22,12 @@ class Settings:
     allow_default_admin_key: bool
     autonomy_key: str
     autonomy_header: str
+    autonomy_executor_host_id: str
+    autonomy_executor_tag: str
+    autonomy_state_root: Path
+    autonomy_api_url: str
+    autonomy_host_kill_switch_file: Path
+    autonomy_hard_disable: bool
     default_model_provider: str
     default_model: str
     claude_binary: str
@@ -49,6 +55,7 @@ def load_settings(
     db_path = Path(db_path_override or os.getenv("DB_PATH", str(root / "ai_enterprise.db")))
     cors_origin = os.getenv("CORS_ORIGIN", "http://localhost:8001")
     cors_origins = [item.strip() for item in cors_origin.split(",") if item.strip()]
+    port = int(os.getenv("PORT", "8001"))
     return Settings(
         project_root=root,
         db_path=db_path,
@@ -56,12 +63,20 @@ def load_settings(
         application_catalog_path=root / "api" / "config" / "application_catalog.json",
         task_catalog_path=root / "api" / "config" / "task_catalog.json",
         host=os.getenv("HOST", "0.0.0.0"),
-        port=int(os.getenv("PORT", "8001")),
+        port=port,
         cors_origins=cors_origins,
         dashboard_admin_key=os.getenv("DASHBOARD_ADMIN_KEY", "").strip(),
         allow_default_admin_key=_env_flag("ALLOW_DEFAULT_ADMIN_KEY", default=False),
         autonomy_key=os.getenv("IAN_AUTONOMY_KEY", ""),
         autonomy_header=os.getenv("IAN_AUTONOMY_HEADER", "X-Autonomy-Key"),
+        autonomy_executor_host_id=os.getenv("AUTONOMY_EXECUTOR_HOST_ID", "ai-enterprise-autonomy"),
+        autonomy_executor_tag=os.getenv("AUTONOMY_EXECUTOR_TAG", "tag:ai-autonomy"),
+        autonomy_state_root=Path(os.getenv("AUTONOMY_STATE_ROOT", "/srv/ai-enterprise/state")),
+        autonomy_api_url=os.getenv("AUTONOMY_API_URL", f"http://127.0.0.1:{port}"),
+        autonomy_host_kill_switch_file=Path(
+            os.getenv("AUTONOMY_HOST_KILL_SWITCH_FILE", "/etc/ai-enterprise/autonomy.disabled")
+        ),
+        autonomy_hard_disable=_env_flag("AUTONOMY_HARD_DISABLE", default=False),
         default_model_provider=os.getenv("DEFAULT_MODEL_PROVIDER", "claude"),
         default_model=os.getenv("DEFAULT_MODEL", "sonnet"),
         claude_binary=os.getenv("CLAUDE_BINARY", "claude"),

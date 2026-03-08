@@ -1,0 +1,20 @@
+[Unit]
+Description=AI-Enterprise autonomy executor
+After=network-online.target tailscaled.service ai-enterprise-api.service
+Wants=network-online.target ai-enterprise-api.service
+
+[Service]
+Type=oneshot
+User=ai-enterprise
+Group=ai-enterprise
+WorkingDirectory=/srv/ai-enterprise
+EnvironmentFile=/etc/ai-enterprise/autonomy.env
+ExecStart=/usr/bin/bash /srv/ai-enterprise/scripts/run_autonomy_executor.sh --all --trigger-source systemd_timer
+Nice=5
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+ReadWritePaths=/srv/ai-enterprise /var/log/ai-enterprise
+
+[Install]
+WantedBy=multi-user.target

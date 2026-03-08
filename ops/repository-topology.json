@@ -6,7 +6,7 @@
     "primary_remote_strategy": "github_ssh_kim_like",
     "mirror_strategy": "none_by_default",
     "primary_remote_namespace": "Kim-Like",
-    "autonomy_rollout_stage": "wave1_preflight_only",
+    "autonomy_rollout_stage": "wave2_audited_execution",
     "deploy_target_rule": "cpanel_and_ssh_hosts_are_deploy_targets_only",
     "no_nested_repos": true
   },
@@ -48,10 +48,11 @@
       "autonomy": {
         "scope": "governed_remote_provisioning",
         "allowed_modes": [
-          "dry_run"
+          "dry_run",
+          "provision"
         ],
-        "wave": 1,
-        "preflight_only": true
+        "wave": 2,
+        "preflight_only": false
       },
       "deploy_targets": [
         {
@@ -77,10 +78,11 @@
       "autonomy": {
         "scope": "governed_remote_provisioning",
         "allowed_modes": [
-          "dry_run"
+          "dry_run",
+          "provision"
         ],
-        "wave": 1,
-        "preflight_only": true
+        "wave": 2,
+        "preflight_only": false
       },
       "deploy_targets": [
         {
@@ -114,10 +116,11 @@
       "autonomy": {
         "scope": "governed_remote_provisioning",
         "allowed_modes": [
-          "dry_run"
+          "dry_run",
+          "provision"
         ],
-        "wave": 1,
-        "preflight_only": true
+        "wave": 2,
+        "preflight_only": false
       },
       "deploy_targets": [
         {
@@ -151,10 +154,11 @@
       "autonomy": {
         "scope": "governed_remote_provisioning",
         "allowed_modes": [
-          "dry_run"
+          "dry_run",
+          "provision"
         ],
-        "wave": 1,
-        "preflight_only": true
+        "wave": 2,
+        "preflight_only": false
       },
       "deploy_targets": [
         {

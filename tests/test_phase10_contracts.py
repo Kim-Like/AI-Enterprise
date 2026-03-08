@@ -14,7 +14,7 @@ PROJECT_ROOT = Path("/Users/IAn/Agent/AI-Enterprise")
 def test_phase_10_topology_manifest_carries_governed_provisioning_metadata():
     topology = json.loads((PROJECT_ROOT / "ops" / "repository-topology.json").read_text())
     assert topology["version"] == 2
-    assert topology["policy"]["autonomy_rollout_stage"] == "wave1_preflight_only"
+    assert topology["policy"]["autonomy_rollout_stage"] == "wave2_audited_execution"
 
     repo_contracts = load_repository_contracts(PROJECT_ROOT)
     assert {repo["id"] for repo in repo_contracts} == {
@@ -32,9 +32,9 @@ def test_phase_10_topology_manifest_carries_governed_provisioning_metadata():
         assert primary_remote["credential_ref"] == "GITHUB_AUTONOMY_TOKEN"
         assert primary_remote["create_if_missing"] is True
         assert autonomy["scope"] == "governed_remote_provisioning"
-        assert autonomy["allowed_modes"] == ["dry_run"]
-        assert autonomy["wave"] == 1
-        assert autonomy["preflight_only"] is True
+        assert autonomy["allowed_modes"] == ["dry_run", "provision"]
+        assert autonomy["wave"] == 2
+        assert autonomy["preflight_only"] is False
 
 
 def test_phase_10_topology_docs_preserve_single_source_of_truth():
@@ -48,7 +48,7 @@ def test_phase_10_topology_docs_preserve_single_source_of_truth():
     assert "manifest remains the canonical desired-state contract" in infrastructure_doc
 
 
-def test_phase_10_topology_validation_script_accepts_wave1_metadata():
+def test_phase_10_topology_validation_script_accepts_wave2_metadata():
     env = os.environ.copy()
     env["GIT_GOVERNANCE_STRICT"] = "0"
     result = subprocess.run(
@@ -61,6 +61,24 @@ def test_phase_10_topology_validation_script_accepts_wave1_metadata():
     assert result.returncode == 0, result.stderr
     assert "provisioning_contract_ok=ai-enterprise" in result.stdout
     assert "git_governance=ok" in result.stdout
+
+
+def test_phase_10_executor_host_contract_artifacts_exist():
+    required_paths = [
+        PROJECT_ROOT / "docs" / "autonomy-executor-host.md",
+        PROJECT_ROOT / "ops" / "systemd" / "ai-enterprise-api.service",
+        PROJECT_ROOT / "ops" / "systemd" / "ai-enterprise-autonomy.service",
+        PROJECT_ROOT / "ops" / "systemd" / "ai-enterprise-autonomy.timer",
+        PROJECT_ROOT / "scripts" / "run_autonomy_executor.sh",
+        PROJECT_ROOT / "scripts" / "validate_autonomy.sh",
+    ]
+    for path in required_paths:
+        assert path.exists(), f"Missing Phase 10 executor contract artifact: {path}"
+
+    host_doc = (PROJECT_ROOT / "docs" / "autonomy-executor-host.md").read_text()
+    assert "always-on, non-human runtime" in host_doc
+    assert "ai-enterprise-autonomy.service" in host_doc
+    assert "validate_ai_enterprise.sh" in host_doc
 
 
 def test_phase_10_provisioning_dry_run_reuses_bootstrap_preflight(monkeypatch):
@@ -79,6 +97,7 @@ def test_phase_10_provisioning_dry_run_reuses_bootstrap_preflight(monkeypatch):
     assert repo["repo_id"] == "ai-enterprise"
     assert repo["credential_present"] is True
     assert repo["status"] == "preflight_ready"
+    assert repo["live_execution_supported"] is True
     assert "preflight_provider_create_if_missing" in repo["planned_actions"]
     assert "bootstrap_primary_remote.sh" in repo["bootstrap_command"]
 

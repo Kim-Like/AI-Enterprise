@@ -1,0 +1,22 @@
+[Unit]
+Description=AI-Enterprise FastAPI control plane
+After=network-online.target tailscaled.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=ai-enterprise
+Group=ai-enterprise
+WorkingDirectory=/srv/ai-enterprise
+EnvironmentFile=/etc/ai-enterprise/autonomy.env
+ExecStart=/usr/bin/env python3 -m uvicorn api.app:create_app --host 0.0.0.0 --port 8001 --factory
+Restart=on-failure
+RestartSec=5
+TimeoutStopSec=20
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+ReadWritePaths=/srv/ai-enterprise /var/log/ai-enterprise
+
+[Install]
+WantedBy=multi-user.target

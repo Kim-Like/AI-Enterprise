@@ -12,6 +12,8 @@ The minimum acceptable provenance record is:
 - deploy target
 - deploy timestamp
 - validation result
+- autonomy run id when the action came from the executor host
+- rollback anchor when validation or bootstrap can be reversed locally
 
 If a live surface cannot be tied back to a commit, it is out of governance.
 
@@ -41,6 +43,8 @@ git rev-parse HEAD
 
 5. Re-run the post-deploy health checks.
 
+For autonomy-managed repo reconciliation, the same evidence is written to SQLite in `deployment_provenance`, and the latest topology sync row in `autonomy_repo_sync` points at the latest provenance record.
+
 ## Rollback Rule
 
 Rollback is performed by returning a deploy boundary to a known-good commit or tag.
@@ -56,11 +60,16 @@ For Git-backed cPanel surfaces:
 ```json
 {
   "repo_id": "lavprishjemmeside.dk",
+  "autonomy_run_id": "f2f598f1-3d23-4b66-b85f-77f48f9b4a4f",
   "ref": "main",
   "commit": "abc123def456",
   "deploy_target": "cpanel:api.lavprishjemmeside.dk",
   "deployed_at": "2026-03-08T22:30:00Z",
-  "validated": true
+  "validated": true,
+  "rollback_anchor": {
+    "origin": "git@github.com:Kim-Like/lavprishjemmeside.dk.git",
+    "commit": "abc123def456"
+  }
 }
 ```
 
@@ -77,6 +86,7 @@ These checks prove that runtime config is still hardened and that the live healt
 
 - `docs/infrastructure-topology.md`
 - `docs/repository-governance.md`
+- `docs/autonomy-provisioning.md`
 - `ops/repository-topology.json`
 - `scripts/bootstrap_primary_remote.sh`
 - `scripts/validate_git_governance.sh`

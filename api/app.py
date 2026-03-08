@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from contextlib import asynccontextmanager
+from pathlib import Path
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -24,8 +25,15 @@ from api.routes import (
 )
 
 
-def create_app(*, db_path_override: str | None = None) -> FastAPI:
-    runtime = build_runtime(db_path_override=db_path_override)
+def create_app(
+    *,
+    db_path_override: str | None = None,
+    project_root_override: str | None = None,
+) -> FastAPI:
+    runtime = build_runtime(
+        db_path_override=db_path_override,
+        project_root=Path(project_root_override) if project_root_override else None,
+    )
     dist_root = runtime.settings.project_root / "dist"
     dist_assets_root = dist_root / "assets"
 

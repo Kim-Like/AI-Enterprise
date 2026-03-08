@@ -48,11 +48,12 @@ Archive a surface when any of these are true:
 
 ## Provisioning Sync Rule
 
-Wave 1 autonomy provisioning must read from `ops/repository-topology.json`, not a second repo inventory.
+Wave 2 autonomy provisioning must read from `ops/repository-topology.json`, not a second repo inventory.
 
 - `primary_remote_env` stays the runtime override for a configured remote URL.
 - `primary_remote` supplies provider, namespace, repo name, protocol, creation eligibility, and credential reference when a remote must be derived.
-- `autonomy` keeps governed repo provisioning scoped to `dry_run` preflight until Phase 10 audit plumbing exists.
+- `autonomy` carries the Wave 2 execution contract for `dry_run` and audited `provision` mode.
+- topology sync and deployment provenance are updated from executor runs, not from a second provisioning database.
 
 ## Local Workflow
 

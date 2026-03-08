@@ -9,6 +9,7 @@ import uuid
 from api.config import Settings, load_settings
 from api.db.client import DatabaseClient
 from api.system.application_registry import sync_application_registry
+from api.system.autonomy_service import sync_autonomy_topology_state
 from api.system.program_registry import sync_registry
 from api.system.specialist_service import sync_specialists
 
@@ -50,12 +51,23 @@ def run_startup(runtime: RuntimeContext) -> dict[str, object]:
         db_client=runtime.db,
         project_root=runtime.settings.project_root,
     )
+    autonomy_sync = sync_autonomy_topology_state(
+        db_client=runtime.db,
+        project_root=runtime.settings.project_root,
+    )
     return {
         "status": "ok",
         "db_path": str(runtime.settings.db_path),
         "project_root": str(runtime.settings.project_root),
-        "steps": ["database_initialized", "registry_synchronized", "applications_synchronized", "specialists_synchronized"],
+        "steps": [
+            "database_initialized",
+            "registry_synchronized",
+            "applications_synchronized",
+            "specialists_synchronized",
+            "autonomy_topology_synchronized",
+        ],
         "registry_sync": registry_sync,
         "application_sync": application_sync,
         "specialist_sync": specialist_sync,
+        "autonomy_sync": autonomy_sync,
     }

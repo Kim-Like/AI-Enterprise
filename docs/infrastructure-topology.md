@@ -67,11 +67,11 @@ These repositories are the primary remote endpoints. Working trees or release ch
 
 ## Autonomy Provisioning
 
-Wave 1 extends `ops/repository-topology.json` with per-repository `primary_remote` and `autonomy` metadata.
+Wave 2 keeps `ops/repository-topology.json` as the governed-repo contract and adds an audited executor-host runtime on top of it.
 
-That metadata does not replace the Phase 9 env contract. `*_PRIMARY_GIT_REMOTE` remains the runtime override when a remote is already configured, while the manifest remains the canonical desired-state contract for governed remote provisioning preflight.
+That metadata does not replace the Phase 9 env contract. `*_PRIMARY_GIT_REMOTE` remains the runtime override when a remote is already configured, while the manifest remains the canonical desired-state contract for governed remote provisioning, topology sync, and provenance sync.
 
-See `docs/autonomy-provisioning.md` for the Wave 1 policy and dry-run rules.
+See `docs/autonomy-provisioning.md` for the Wave 2 policy and executor rules.
 
 ## Repo Boundaries
 

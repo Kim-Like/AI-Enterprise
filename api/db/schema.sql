@@ -122,6 +122,87 @@ CREATE TABLE IF NOT EXISTS settings (
     updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
+CREATE TABLE IF NOT EXISTS autonomy_runs (
+    id TEXT PRIMARY KEY,
+    trigger_source TEXT NOT NULL,
+    actor_agent_id TEXT NOT NULL,
+    requested_mode TEXT NOT NULL,
+    credential_class TEXT NOT NULL,
+    host_id TEXT NOT NULL,
+    repo_ids_json TEXT NOT NULL DEFAULT '[]',
+    status TEXT NOT NULL DEFAULT 'running',
+    validation_status TEXT NOT NULL DEFAULT 'pending',
+    commit_anchor TEXT DEFAULT '{}',
+    rollback_anchor TEXT DEFAULT '{}',
+    quarantine_status TEXT NOT NULL DEFAULT 'clear',
+    quarantine_reason TEXT DEFAULT '',
+    bootstrap_report_json TEXT NOT NULL DEFAULT '{}',
+    error_detail TEXT DEFAULT '',
+    started_at TEXT,
+    completed_at TEXT,
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+CREATE TABLE IF NOT EXISTS autonomy_actions (
+    id TEXT PRIMARY KEY,
+    run_id TEXT NOT NULL,
+    repo_id TEXT NOT NULL,
+    action_type TEXT NOT NULL,
+    planned_action TEXT NOT NULL,
+    credential_ref TEXT DEFAULT '',
+    credential_class TEXT NOT NULL,
+    requested_mode TEXT NOT NULL,
+    status TEXT NOT NULL DEFAULT 'running',
+    validation_status TEXT NOT NULL DEFAULT 'pending',
+    commit_anchor TEXT DEFAULT '',
+    rollback_anchor TEXT DEFAULT '{}',
+    quarantine_status TEXT NOT NULL DEFAULT 'clear',
+    quarantine_reason TEXT DEFAULT '',
+    detail_json TEXT NOT NULL DEFAULT '{}',
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+    FOREIGN KEY (run_id) REFERENCES autonomy_runs(id)
+);
+
+CREATE TABLE IF NOT EXISTS autonomy_repo_sync (
+    repo_id TEXT PRIMARY KEY,
+    classification TEXT NOT NULL,
+    local_path TEXT NOT NULL,
+    expected_primary_remote TEXT NOT NULL,
+    effective_primary_remote TEXT NOT NULL,
+    autonomy_scope TEXT NOT NULL,
+    allowed_modes_json TEXT NOT NULL DEFAULT '[]',
+    preflight_only INTEGER NOT NULL DEFAULT 0,
+    wave INTEGER NOT NULL DEFAULT 1,
+    manifest_stage TEXT NOT NULL DEFAULT '',
+    manifest_sync_status TEXT NOT NULL DEFAULT 'pending',
+    last_run_id TEXT DEFAULT '',
+    last_status TEXT NOT NULL DEFAULT 'never_run',
+    last_validation_status TEXT NOT NULL DEFAULT 'pending',
+    last_commit_anchor TEXT DEFAULT '',
+    last_rollback_anchor TEXT DEFAULT '{}',
+    last_provenance_id TEXT DEFAULT '',
+    quarantine_status TEXT NOT NULL DEFAULT 'clear',
+    quarantine_reason TEXT DEFAULT '',
+    last_synced_at TEXT,
+    updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+CREATE TABLE IF NOT EXISTS deployment_provenance (
+    id TEXT PRIMARY KEY,
+    repo_id TEXT NOT NULL,
+    autonomy_run_id TEXT DEFAULT '',
+    source TEXT NOT NULL DEFAULT 'autonomy',
+    deploy_target TEXT NOT NULL,
+    ref_name TEXT DEFAULT '',
+    commit_sha TEXT DEFAULT '',
+    rollback_anchor TEXT DEFAULT '{}',
+    validation_status TEXT NOT NULL DEFAULT 'pending',
+    metadata_json TEXT NOT NULL DEFAULT '{}',
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
 CREATE TABLE IF NOT EXISTS program_registry (
     id TEXT PRIMARY KEY,
     name TEXT NOT NULL,
@@ -633,6 +714,11 @@ CREATE INDEX IF NOT EXISTS idx_error_log_status ON error_log(status, severity);
 CREATE INDEX IF NOT EXISTS idx_error_log_source ON error_log(source);
 CREATE INDEX IF NOT EXISTS idx_execution_history_agent ON execution_history(agent_id, created_at);
 CREATE INDEX IF NOT EXISTS idx_execution_history_task ON execution_history(task_id);
+CREATE INDEX IF NOT EXISTS idx_autonomy_runs_created ON autonomy_runs(created_at);
+CREATE INDEX IF NOT EXISTS idx_autonomy_runs_status ON autonomy_runs(status, created_at);
+CREATE INDEX IF NOT EXISTS idx_autonomy_actions_run ON autonomy_actions(run_id, created_at);
+CREATE INDEX IF NOT EXISTS idx_autonomy_actions_repo ON autonomy_actions(repo_id, created_at);
+CREATE INDEX IF NOT EXISTS idx_deployment_provenance_repo ON deployment_provenance(repo_id, created_at);
 CREATE INDEX IF NOT EXISTS idx_program_registry_owner ON program_registry(owner_master_id, app_status);
 CREATE INDEX IF NOT EXISTS idx_data_store_registry_program ON data_store_registry(program_id, role, status);
 CREATE INDEX IF NOT EXISTS idx_agent_program_assignments_agent ON agent_program_assignments(agent_id, status);
@@ -744,7 +830,9 @@ INSERT OR IGNORE INTO settings (key, value, description) VALUES
     ('AUTONOMY_ALLOWED_REPOSITORY_IDS', '', 'Comma-separated repository ids allowed for autonomous repo provisioning'),
     ('AUTONOMY_REQUIRE_STRICT_VALIDATION', '1', 'Require strict validation before autonomy escalates beyond preflight'),
     ('AUTONOMY_ALLOW_DESTRUCTIVE_ACTIONS', '0', 'Allow destructive autonomy actions such as remote deletion'),
-    ('AUTONOMY_AUDIT_READY', '0', 'Durable audit plumbing readiness gate for live autonomy writes');
+    ('AUTONOMY_AUDIT_READY', '0', 'Durable audit plumbing readiness gate for live autonomy writes'),
+    ('AUTONOMY_EXECUTOR_ENABLED', '0', 'Allow the always-on autonomy executor to trigger IAn or Engineer runs'),
+    ('AUTONOMY_EXECUTOR_ALLOWED_AGENTS', 'ian-master,engineer', 'Comma-separated agent ids allowed to run on the autonomy executor host');
 
 INSERT OR IGNORE INTO master_agents (id, name, type, status, description) VALUES
     ('father', 'IAn', 'orchestrator', 'active', 'Top-level orchestration authority'),
