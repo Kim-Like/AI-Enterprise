@@ -2,146 +2,123 @@
 
 **Analysis Date:** 2026-03-08
 
-## APIs & External Services
+## Status Reading
 
-**AI Provider Runtime:**
-- Claude Code CLI - Agent execution and model-backed workflows from `backend/agent/claude_client.py`
-  - Integration method: Local CLI process invocation rather than direct HTTPS client code
-  - Auth: Local Claude OAuth session plus CLI binary selection through `CLAUDE_BINARY` and related settings
-  - Status: Live in the current workstation environment; authenticated session was detected during audit
+- `LIVE`: code path exists and current validation or runtime evidence proves it is active
+- `PARTIAL`: env/config exists, but the control plane does not fully prove live auth on every run
+- `PLANNED`: secret or registry contract exists without a live first-party implementation
 
-**Business Integrations:**
-- Billy API - Accounting/reporting integration for `artisan-reporting`
-  - Integration method: Registry- and env-driven, referenced by `backend/system/program_registry.py` and the managed app in `programs/artisan/reporting.theartisan.dk/`
-  - Auth: `BILLY_API_TOKEN`
-  - Status: Configured in the current environment, but not centrally validated by the control-plane backend
+## Git And Repository Governance
 
-**Remote Operations:**
-- cPanel / SSH operations - Remote WordPress and hosting management through `backend/system/artisan_wp_service.py` and `backend/routes/workspace.py`
-  - Integration method: SSH commands and remote PHP/MySQL probes
-  - Auth: `CPANEL_SSH_HOST`, `CPANEL_SSH_USER`, `CPANEL_SSH_PORT`, and an SSH key path env var
-  - Status: SSH connectivity was confirmed during audit
+**Primary Git remote**
+- Provider: GitHub over SSH
+- Namespace: `Kim-Like`
+- Source of truth contract: `ops/repository-topology.json`
+- Governance validation: `scripts/validate_git_governance.sh`
+- Live repo provisioning path: `api/system/autonomy_service.py`
+- Status: `LIVE` for the main `AI-Enterprise` repo, `PARTIAL` for governed independent repos until they are fully materialized
 
-**Registry-Declared External Services:**
-- Supabase - Declared for Baltzer TCG and some Samlino incubators through `backend/db/schema.sql` and `backend/system/program_registry.py`
-  - Auth: `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` in the control plane; some incubators also reference publishable/browser keys
-  - Status: Not fully configured in the current root environment
-- Shopify Admin - Declared for `baltzer-shopify` through `backend/db/schema.sql`
-  - Auth: `SHOPIFY_STORE_DOMAIN` and `SHOPIFY_ADMIN_TOKEN`
-  - Status: Missing in the current root environment
-- Brevo / email marketing - Referenced as a managed-program concern for Artisan email marketing
-  - Status: Planned/partial, not a live first-party control-plane integration
+**Autonomous repo creation**
+- Provider-side create path uses GitHub REST calls from `api/system/autonomy_service.py`
+- Required credential: `GITHUB_AUTONOMY_TOKEN`
+- Status: `PARTIAL`
+- Notes: implemented in code, but still depends on a real executor host env and non-human credential
 
-## Data Storage
+## Remote Hosting And cPanel
 
-**Databases:**
-- SQLite - Primary control-plane database at `father.db`
-  - Connection: `DB_PATH` via `backend/config.py`
-  - Client: `backend/db/client.py`
-  - Migrations/schema: `backend/db/schema.sql`
-  - Status: Live and verified in current runtime
-- cPanel MySQL - Artisan reporting and WordPress data stores
-  - Connection: `ARTISAN_REPORTING_DB_*` and `ARTISAN_WP_DB_*`
-  - Validation method: Remote checks initiated through service code
-  - Status: Recorded as configured, not proven fully live-authenticated by a central integration suite
-- cPanel MySQL - Lavprishjemmeside
-  - Connection: `DB_HOST`, `DB_USER`, `DB_PASSWORD`, `DB_NAME`
-  - Status: Missing env values in the current root environment
-- SQLite - Samlino module storage
-  - Connection: program-local file path tracked in registry data
-  - Status: Registry reports missing path
-- Supabase Postgres - Baltzer TCG
-  - Connection: `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY`
-  - Status: Registry reports missing env
+**cPanel / SSH**
+- Shared shell helpers: `scripts/_cpanel_common.sh`
+- Runtime contract checks: `scripts/check_remote_config_contract.sh`
+- Live health checks: `scripts/verify_remote_portfolio.sh`
+- Policy doc: `docs/cpanel-runtime-contract.md`
+- Status: `LIVE`
 
-**File Storage:**
-- Local filesystem - Static UI assets in `backend/static/ui`, agent canonical files in `father/`, `engineer/`, and `masters/`, and runtime logs/backups beside source
-- No dedicated first-party object storage integration was found in the control-plane code
+Verified remote surfaces are modeled as deploy targets, not code source:
+- `https://lavprishjemmeside.dk`
+- `https://api.lavprishjemmeside.dk`
+- `https://ljdesignstudio.dk`
+- `https://api.ljdesignstudio.dk`
+- `https://theartisan.dk`
+- `https://reporting.theartisan.dk`
 
-**Caching:**
-- No dedicated Redis or external cache layer was found
-- The system relies on SQLite, filesystem state, and in-process request handling
+## Databases And Storage
 
-## Authentication & Identity
+**Primary control-plane datastore**
+- SQLite database at `ai_enterprise.db`
+- Client: `api/db/client.py`
+- Schema: `api/db/schema.sql`
+- Startup seeding: `api/bootstrap.py`
+- Status: `LIVE`
 
-**Control-Plane Write Auth:**
-- Shared static header auth from `backend/security/admin_auth.py`
-  - Implementation: `X-Admin-Key` plus configurable autonomy header
-  - Token storage: Browser `localStorage` in `frontend/src/api/client.ts` and `frontend/src/components/ui/ControlAuthPanel.tsx`
-  - Status: Live, but weak from a security perspective
+**Registry-declared external or adjacent datastores**
+- Artisan Reporting MySQL: env-backed cPanel database, status `PARTIAL`
+- Artisan WordPress MySQL: env-backed cPanel database, status `PARTIAL`
+- Lavprishjemmeside MySQL: env-backed cPanel database, status `PARTIAL`
+- Samlino local SQLite path: registry-tracked local payload store, status depends on payload path presence
+- Baltzer Shopify cloud surface: env-backed external platform, status `PARTIAL`
+- Baltzer TCG migration hold: explicit planned/non-live replacement contract
 
-**Model/Auth Provider:**
-- Claude OAuth
-  - Credentials: Managed by the local CLI runtime, not by repo-stored OAuth client config
-  - Session handling: CLI session inspection via `backend/routes/settings.py`
-  - Status: Live in the audited workstation
+Datastore status is derived by:
+- `api/system/program_registry.py`
+- `api/system/connection_status.py`
 
-**OAuth Integrations:**
-- No first-party browser or server OAuth app configuration was found for operator sign-in
-- Some managed/incubator apps use browser auth libraries or publishable keys, but those are outside the control-plane auth model
+## Secrets And Connection Health
 
-## Monitoring & Observability
+**Canonical secret inventory**
+- `api/system/secret_catalog.py`
+- `.env.example`
+- `SECRETS-MANIFEST.md`
 
-**Error Tracking:**
-- Local error capture middleware stores runtime issues in the control-plane DB through `backend/middleware/error_capture.py`
-- No Sentry, Datadog, or equivalent hosted error tracking was found
+**Secrets/status API**
+- `GET /api/control-ui/secrets/status`
+- `POST /api/control-ui/secrets/test/{key_name}`
+- Implementation: `api/routes/secrets.py` and `api/system/connection_status.py`
 
-**Analytics:**
-- No first-party analytics integration was found in the control-plane SPA
+Important distinction:
+- Many external connections are only proven as `env present`
+- Only a subset perform live checks during validation, such as Claude CLI auth and cPanel SSH
 
-**Logs:**
-- Python logging plus local log files under `logs/`
-- Service manager integration through `deploy/systemd/` and `deploy/launchd/`
+## AI Provider And API Integrations
 
-## CI/CD & Deployment
+**Claude CLI**
+- Used for local auth/status verification through `claude auth status`
+- Implementation: `api/system/connection_status.py`
+- Status: `LIVE` when the executor/workstation is logged in
 
-**Hosting:**
-- Service-managed Python process using `scripts/run_prod.sh`
-- Example Linux deployment through `deploy/systemd/ian-father-agent.service`
-- Example macOS deployment through `deploy/launchd/com.ian.father-agent.plist.example`
+**Anthropic / OpenAI**
+- Present in the secret contract
+- No first-party SDK-based control-plane client is currently mapped in the repo
+- Status: `PLANNED` from the control-plane perspective
 
-**CI Pipeline:**
-- The control plane itself has no root-level CI workflow
-- Program-level GitHub Actions exist for some managed apps, including `programs/artisan/reporting.theartisan.dk/.github/workflows/deploy.yml` and `programs/baltzer/reporting.baltzergames.dk/.github/workflows/deploy.yml`
-- GitHub SSH auth is not configured in the current workstation, so private SSH remotes cannot be validated through SSH today
+**Billy**
+- Present in env/secret definitions and portfolio registry
+- Used as a program-level dependency for reporting payloads
+- Status: `PARTIAL`
 
-## Environment Configuration
+**Shopify**
+- Present in the secret contract and program registry
+- No first-party control-plane API client beyond connection inventory
+- Status: `PARTIAL`
 
-**Development:**
-- Root env source is `.env`, with names documented in `.env.example`
-- Critical local categories: DB path, write auth, model runtime, Billy token, cPanel SSH, and program datastore credentials
-- Current live evidence:
-  - Claude CLI auth works
-  - cPanel SSH works
-  - Root frontend build works
-  - GitHub SSH auth is missing
+## Frontend/Auth Boundary
 
-**Staging:**
-- No separate first-party staging environment contract was found in the control-plane repo
+- Operator keys are assembled in-memory only in `src/lib/control-session.tsx`
+- Requests use same-origin fetch wrappers in `src/lib/api/client.ts`
+- `localStorage` and `sessionStorage` are forbidden in the clean target
+- Status: `LIVE`
 
-**Production:**
-- Production expectations are implied through service-manager files and env loading in `backend/config.py`
-- External datastore state is seeded and tracked in the registry, but many statuses represent config presence rather than true connectivity
+This is a real improvement over the brownfield source project and should be treated as current truth.
 
-## Webhooks & Callbacks
+## Tailscale And Always-On Host
 
-**Incoming:**
-- No confirmed first-party webhook endpoints were identified as active control-plane integrations
-- Webhook references are mostly planned or indirect in managed/incubator code
+- Host contract: `docs/autonomy-executor-host.md`
+- Services: `ops/systemd/ai-enterprise-api.service`, `ops/systemd/ai-enterprise-autonomy.service`
+- Requirement: `tailscaled.service` on the executor host
+- Status: `PARTIAL`
 
-**Outgoing:**
-- No centrally implemented outgoing webhook dispatcher was found in the control-plane backend
-- Treat webhook support as planned unless a managed program owns it separately
+The code and service units exist, but full autonomous execution depends on host rollout and environment provisioning.
 
-## Validation Notes
+## Retired Or Non-Live Integrations
 
-- The current registry status model should be read carefully:
-  - `verified` means a stronger local check exists
-  - `configured` often means env/path presence only
-  - `missing_env` and `missing_path` mean the integration cannot be treated as live
-- Preserve this distinction in future mapping and rebuild work; do not collapse configured and authenticated into the same status.
-
----
-
-*Integration audit: 2026-03-08*
-*Update when adding or removing external services*
+- Supabase is no longer part of the live control-plane secret catalog or datastore contract
+- If Supabase references appear, they are legacy payload material or archive context, not active AI-Enterprise infrastructure

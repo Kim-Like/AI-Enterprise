@@ -2,102 +2,103 @@
 
 **Analysis Date:** 2026-03-08
 
+## Canonical Runtime
+
+- Canonical repo root: `AI-Enterprise/`
+- Backend runtime: Python FastAPI app in `api/`
+- Frontend runtime: React 18 + TypeScript SPA in `src/`
+- Delivery model: frontend is built into `dist/` and served by `api/app.py`
+- Local launcher: `scripts/serve_ai_enterprise.sh`
+- Production host model: systemd services in `ops/systemd/`
+
 ## Languages
 
-**Primary:**
-- Python 3.x - Control-plane backend, agent runtime, registry sync, and persistence access in `backend/`
-- TypeScript 5.x - Control-plane frontend in `frontend/src/`
+**Primary**
+- Python: API routes, startup/bootstrap, registry sync, autonomy runtime, SQLite access
+- TypeScript: mission-control SPA, route components, API client, operator session state
 
-**Secondary:**
-- JavaScript - Build config and managed program runtimes such as `frontend/vite.config.ts`, `programs/artisan/reporting.theartisan.dk/app.js`, and `scripts/*.sh`
-- SQL - SQLite schema and data bootstrapping in `backend/db/schema.sql`
-- Markdown - Agent canonical files under `father/`, `engineer/`, `masters/`, and operational docs under `README/`
-- PHP - Managed WordPress payload under `programs/artisan/the-artisan-wp/`
+**Secondary**
+- SQL: schema bootstrap in `api/db/schema.sql`
+- Bash: validation, remote checks, Git governance, autonomy executor launch
+- JSON: application catalog, topology manifest, runtime config
+- CSS: design tokens and app styles in `src/styles/`
+- Markdown: planning, agent canonical files, operational docs
 
-## Runtime
+## Backend Stack
 
-**Environment:**
-- Python virtualenv runtime - App boot uses `.venv` through `scripts/run_prod.sh`
-- Node.js runtime - Required for `frontend/` and several managed programs; no repo-pinned Node version file was found
-- Browser runtime - React SPA served from `backend/static/ui/`
+- FastAPI in `api/app.py`
+- Uvicorn as the ASGI server via `python3 -m uvicorn api.app:create_app --factory`
+- Pydantic v2 request models across route modules
+- `python-dotenv`-driven settings load in `api/config.py`
+- SQLite with WAL-backed schema bootstrap via `api/db/client.py`
 
-**Package Manager:**
-- pip via `requirements.txt` - Backend dependency entrypoint; versions are mostly unpinned
-- npm - Frontend and managed program package manager
-- Lockfiles: `frontend/package-lock.json` and several nested `package-lock.json` files under `programs/`
+Backend dependency entrypoint:
+- `requirements.txt`
 
-## Frameworks
+Important backend modules:
+- `api/bootstrap.py`
+- `api/routes/`
+- `api/system/`
+- `api/security/admin_auth.py`
+- `api/db/schema.sql`
 
-**Core:**
-- FastAPI - HTTP server and route composition in `backend/main.py`
-- Uvicorn - ASGI runtime launched by `scripts/run_prod.sh`
-- Pydantic 2.x - Request and response models in backend routes
-- React 18.3 - SPA shell and routed pages in `frontend/src/`
-- React Router 6.30 - Frontend route handling in `frontend/src/App.tsx`
-- Tailwind CSS 3.4 - Utility styling in `frontend/tailwind.config.js` and `frontend/src/styles/`
+## Frontend Stack
 
-**Testing:**
-- pytest - Root test runner configured by `pytest.ini`
-- FastAPI `TestClient` - Backend integration-style API tests under `tests/`
-- Managed-program local test stacks also exist, for example Node test scripts in `programs/artisan/reporting.theartisan.dk/package.json` and Vitest in `programs/baltzer/TCG-index/package.json`
+- React 18
+- React Router 6
+- Vite 5
+- TypeScript 5.7
+- Vitest + Testing Library
+- `@fontsource/dm-sans` and `@fontsource/ibm-plex-mono`
 
-**Build/Dev:**
-- Vite 5.4 - Frontend bundling in `frontend/vite.config.ts`
-- TypeScript 5.7 - Control-plane compile/typecheck in `frontend/package.json` and `frontend/tsconfig.json`
-- PostCSS + Autoprefixer - CSS pipeline in `frontend/postcss.config.js`
+The live frontend does **not** use Tailwind. The control-plane UI is styled with plain CSS in:
+- `src/styles/tokens.css`
+- `src/styles/app.css`
 
-## Key Dependencies
+Frontend dependency and build entrypoints:
+- `package.json`
+- `vite.config.ts`
+- `tsconfig.json`
+- `src/main.tsx`
+- `src/App.tsx`
 
-**Critical:**
-- `fastapi` - API routing, dependency injection, and response handling from `requirements.txt`
-- `uvicorn[standard]` - Production/dev server process from `requirements.txt`
-- `pydantic>=2.0` - Request model validation from `requirements.txt`
-- `python-dotenv` - Root `.env` loading in `backend/config.py`
-- `react` / `react-dom` - SPA rendering in `frontend/package.json`
-- `react-router-dom` - Client routing in `frontend/package.json`
-- `typescript` - Strict frontend typing in `frontend/package.json`
-- `vite` - Frontend build pipeline in `frontend/package.json`
-- `tailwindcss` - Frontend design-token and utility system in `frontend/package.json`
+## Storage And State
 
-**Infrastructure:**
-- SQLite - Control-plane state store at `father.db`, initialized by `backend/db/client.py`
-- JSON config catalogs - Runtime metadata in `backend/config/application_catalog.json`, `backend/config/stack_profiles.json`, and related files
-- Markdown agent packets - Canonical agent behavior loaded from `father/`, `engineer/`, and `masters/`
+- Primary runtime store: local SQLite database at `ai_enterprise.db` via `DB_PATH`
+- Schema bootstrap: `api/db/schema.sql`
+- Registry/state sync on startup: `api/bootstrap.py`
+- Agent identity/state content: filesystem canonical files under `agents/`
+- Built frontend output: `dist/`
 
-## Configuration
+## Auth And Operator Session
 
-**Environment:**
-- Root configuration is file-based through `.env` and `.env.example`, loaded by `backend/config.py`
-- Required config categories include server boot (`HOST`, `PORT`, `DB_PATH`), write auth (`DASHBOARD_ADMIN_KEY`, `IAN_AUTONOMY_*`), model selection (`DEFAULT_MODEL_PROVIDER`, `DEFAULT_MODEL`, `CLAUDE_*`), and portfolio integrations (database, SSH, Billy, Supabase, Shopify)
-- Frontend does not use a separate build-time env layer for the control plane; it relies on same-origin API calls from `frontend/src/api/client.ts`
+- Server auth model: shared headers `X-Admin-Key` and `X-Autonomy-Key`
+- Enforcement: `api/security/admin_auth.py`
+- Frontend session storage: in-memory React context only in `src/lib/control-session.tsx`
+- Browser `localStorage` and `sessionStorage` use is treated as forbidden by `scripts/validate_ai_enterprise.sh`
 
-**Build:**
-- `frontend/vite.config.ts` - Frontend build output targets `backend/static/ui`
-- `frontend/tsconfig.json` - Strict TypeScript settings for the control-plane SPA
-- `frontend/tailwind.config.js` and `frontend/postcss.config.js` - Styling pipeline
-- `backend/db/schema.sql` - Database schema and seeded registry data
+## External And Portfolio Sub-Stacks
 
-## Platform Requirements
+The control plane manages or inventories downstream stacks that are not part of the main runtime:
+- Node/Express/EJS payloads under `programs/artisan/` and `programs/baltzer/`
+- WordPress/PHP payload under `programs/artisan/the-artisan-wp`
+- Shopify-backed operational surface declared in the registry
+- Samlino archive/context workspace under `programs/ian-agency/contexts/samlino/`
 
-**Development:**
-- macOS or Linux-like shell environment
-- Python virtualenv with dependencies from `requirements.txt`
-- Node/npm for `frontend/` and managed-program builds
-- Optional local access to Claude CLI and remote SSH-backed integrations for full feature coverage
+Some portfolio payloads still use Tailwind or different local stacks, but that is payload-specific and not part of the main mission-control frontend.
 
-**Production:**
-- Long-running Python process managed through `deploy/systemd/ian-father-agent.service` or `deploy/launchd/com.ian.father-agent.plist.example`
-- Built frontend assets served from `backend/static/ui/`
-- SQLite write access for `father.db`, plus optional external connectivity for cPanel, Billy, Supabase, and Shopify-backed programs
+## Build And Validation Commands
 
-## Managed Program Sub-Stacks
+```bash
+npm run test -- --run
+npm run build
+python3 -m pytest -p no:cacheprovider tests/api tests/test_agent_hierarchy.py tests/test_program_payloads.py tests/test_phase10_contracts.py -q
+bash scripts/validate_ai_enterprise.sh
+bash scripts/serve_ai_enterprise.sh
+```
 
-- `programs/artisan/reporting.theartisan.dk/` - Node + Express + EJS + MySQL (`express`, `ejs`, `mysql2`)
-- `programs/artisan/the-artisan-wp/` - WordPress/PHP/WooCommerce payload controlled through the control plane
-- `programs/baltzer/TCG-index/` - React + Vite + Supabase + Vitest local app stack
-- `programs/samlino/seo-agent-playground/` - React + Vite frontend with Python runtime sidecars and local SQLite
+## Drift Notes
 
----
-
-*Stack analysis: 2026-03-08*
-*Update after major dependency changes*
+- Older codebase-map docs that describe `backend/`, `frontend/`, Tailwind, or browser-persisted keys are stale.
+- `api/config/application_catalog.json` still carries some brownfield-era path metadata for `ian-mission-control`.
+- The canonical control-plane stack is now `api/` + `src/` + `dist/`, not the original source-project layout.
